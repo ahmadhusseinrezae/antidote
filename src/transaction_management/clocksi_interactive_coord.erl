@@ -14,7 +14,7 @@
 -behaviour(gen_statem).
 
 %% API
--export([perform_static_operation/4]).
+-export([perform_static_operation/4, perform_static_range_operation/6]).
 -export([start_link/0]).
 
 %% gen_statem callbacks
@@ -95,6 +95,21 @@ perform_static_operation(Clock, Key, Type, Properties) ->
       {ok, Snapshot, CommitTime}
   end.
 
+
+%% @doc This is a standalone function for run a range query.
+-spec perform_static_range_operation(snapshot_time() | ignore, key(), key(),  type(), non_neg_integer(), clocksi_readitem:read_property_list()) ->
+    {ok, val() | term(), snapshot_time()} | {error, reason()}.
+perform_static_range_operation(Clock, Min, Max, Type, Timeout, Properties) ->
+    Transaction = clocksi_interactive_coord_helpers:create_transaction_record(Clock, true, Properties),
+    Preflist = antidote_riak_utilities:get_preflist_from_key(Min),
+    IndexNode = hd(Preflist),
+    case clocksi_readrange:read_range(IndexNode, Min, Max, Timeout, Type, Transaction, []) of
+        {error, Reason} ->
+            {error, Reason};
+        {ok, Snapshot} ->
+            CommitTime = Transaction#transaction.vec_snapshot_time,
+            {ok, Snapshot, CommitTime}
+    end.
 
 %%%===================================================================
 %%% States

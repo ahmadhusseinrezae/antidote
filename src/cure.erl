@@ -13,6 +13,7 @@
 -export([
   read_objects/2,
   read_objects/3,
+  read_range/3,
   update_objects/2,
   update_objects/3
 ]).
@@ -28,6 +29,10 @@ read_objects(Objects, TxId) ->
 read_objects(Clock, Properties, Objects) ->
   obtain_objects(Clock, Properties, Objects, object_value).
 
+-spec read_range(snapshot_time() | ignore, txn_properties(), {key(), key(),  type(), bucket(), non_neg_integer()}) ->
+    {ok, list(), vectorclock()} | {error, reason()}.
+read_range(Clock, Properties, Range) ->
+    obtain_range(Clock, Properties, Range).
 
 -spec update_objects([{bound_object(), op_name(), op_param()}], txid())
       -> ok | {error, reason()}.
@@ -94,6 +99,17 @@ obtain_objects(Clock, Properties, Objects, StateOrValue) ->
           end
       end
   end.
+
+-spec obtain_range(snapshot_time() | ignore, txn_properties(), {key(), key(),  type(), bucket(), non_neg_integer()}) ->
+    {ok, list(), vectorclock()} | {error, reason()}.
+obtain_range(Clock, Properties, Range) ->
+    {Min, Max, Type, _B, Timeout} = Range,
+    case clocksi_interactive_coord:perform_static_range_operation(Clock, Min, Max, Type, Timeout, Properties) of
+        {ok, Res, SnapshotTimestamp}  ->
+            {ok, Res, SnapshotTimestamp};
+        {error,Reason} ->
+            {error,Reason}
+    end.
 
 transform_reads(Snapshot, StateOrValue, Objects) ->
   case StateOrValue of

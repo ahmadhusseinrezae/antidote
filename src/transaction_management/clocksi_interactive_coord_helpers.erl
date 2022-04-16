@@ -10,7 +10,7 @@
 -author("ayush").
 -include("antidote.hrl").
 %% API
--export([create_transaction_record/3]).
+-export([create_transaction_record/3, get_snapshot_time/0]).
 
 
 

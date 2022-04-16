@@ -16,6 +16,7 @@
     abort_transaction/1,
     read_objects/2,
     read_objects/3,
+    read_range/3,
     update_objects/2,
     update_objects/3,
     get_txn_property/2
@@ -34,6 +35,10 @@ read_objects(Objects, TxId) ->
 read_objects(Clock, Properties, Objects) ->
   cure:read_objects(Clock, Properties, Objects).
 
+-spec read_range(snapshot_time() | ignore, txn_properties(), {key(), key(),  type(), bucket(), non_neg_integer()})
+        -> {ok, list(), vectorclock()} | {error, reason()}.
+read_range(Clock, Properties, Range) ->
+    cure:read_range(Clock, Properties, Range).
 
 -spec update_objects([{bound_object(), op_name(), op_param()}], txid())
       -> ok | {error, reason()}.

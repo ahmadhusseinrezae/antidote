@@ -42,6 +42,7 @@ start_vnode(I) ->
 
 init([Partition]) ->
     GingkoSupervisionTree = gingko_sup:start_link(Partition),
+    ok = range_tree:init_tree(),
     {ok, #state { partition=Partition ,gingko = GingkoSupervisionTree}}.
 
 
@@ -192,6 +193,11 @@ handle_command({get_version, TxId, Key, Type, MinimumSnapshotTime,MaximumSnapsho
     logger:notice(#{step => "materialize", materialized => {Key, Type, Value, Timestamp}}),
     {reply,{ok, {Key, Type, Value}}, State};
 
+handle_command({get_range, ReqId, {L, H, Version}}, _Sender, State = #state{partition = Partition}) ->
+    Location = {Partition, node()},
+    Res = range_tree:get_range(L, H, true, true, Version),
+    {reply, {ReqId, {Location, Res}}, State};
+
 handle_command({prepare, TransactionId,PrepareTimestamp}, _Sender, State = #state{partition = Partition}) ->
     Entry = #log_operation{
         tx_id = TransactionId,
@@ -220,9 +226,10 @@ handle_command({update, Key, Type, TransactionId,DownstreamOp}, _Sender, State =
     checkpoint_daemon:updateKeyInCheckpoint(Partition, TransactionId),
     {reply, {ok, NextIndex}, State};
 
-handle_command({commit,TransactionId, LogRecord, _WriteSet}, _Sender, State = #state{partition = Partition}) ->
+handle_command({commit,TransactionId, LogRecord, WriteSet}, _Sender, State = #state{partition = Partition}) ->
     {ok, _NextIndex, LastContinuation}= gingko_op_log:append(LogRecord, Partition),
     checkpoint_daemon:commitTxn(Partition, TransactionId, LastContinuation),
+    insert_index(TransactionId, WriteSet, Partition),
     {reply, committed, State};
 
 handle_command({abort, LogRecord}, _Sender, State = #state{partition = Partition}) ->
@@ -271,5 +278,10 @@ handle_exit(_Pid, _Reason, State) ->
 
 terminate(_Reason, _State) ->
     ok.
+
+insert_index(_TransactionId, [ {RowId, Type}| _T]= _WriteSet, Partition) ->
+    {ok, SomeTime} = clocksi_interactive_coord_helpers:get_snapshot_time(),
+    {ok, {_Key1, _Type1, Value, _Timestamp}} = cache_daemon:get_from_cache(ignore, RowId, Type, SomeTime, SomeTime, Partition),
+    ok = range_tree:insert({RowId, Value, SomeTime}).
 
 
