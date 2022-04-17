@@ -31,6 +31,7 @@
 -include("antidote.hrl").
 -include("inter_dc_repl.hrl").
 -include_lib("kernel/include/logger.hrl").
+-define(LASTTIMEOUT, 5).
 
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
@@ -73,17 +74,17 @@ run_quroum(Min, Max, Timeout, _Type, Transaction) ->
     range_fsm:execute(ReqId),
     wait_for_reqid(ReqId, Timeout, Pid).
 
-wait_for_reqid(ReqId, Timeout, _Pid) ->
+wait_for_reqid(ReqId, Timeout, Pid) ->
     receive
         {ReqId, Val} ->
             Val
     after
         Timeout ->
-            case range_fsm:get_responses(ReqId) of
-                {ReqId, Res} ->
-%%                    range_fsm:stop(Pid),
-                    Res;
-                {error, Reason} ->
-                    {error, Reason}
+            Pid ! get_responses,
+            receive
+                {ReqId, Val} ->
+                    Val
+            after
+                ?LASTTIMEOUT -> {error, timeout}
             end
     end.

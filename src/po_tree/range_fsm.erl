@@ -14,7 +14,7 @@
               handle_info/3, handle_sync_event/4, terminate/3, run/7]).
 
 
--export([prepare/1, prepare/3, execute/1, execute/3, waiting/3, get_responses/1, stop/1]).
+-export([prepare/1, prepare/3, execute/1, execute/3, waiting/3]).
 
 -ignore_xref([prepare/3, execute/3, waiting/2]).
 
@@ -49,18 +49,6 @@ prepare(ReqId)->
 execute(ReqId)->
     gen_statem:call(list_to_atom(ref_to_list(ReqId)), do).
 
-get_responses(ReqId)->
-    ReqId= gen_statem:send_request(list_to_atom(ref_to_list(ReqId)), responses),
-    case gen_statem:receive_response(list_to_atom(ref_to_list(ReqId))) of
-        {reply, Reply} ->
-            Reply;
-        {error, Reason} ->
-            {error, Reason}
-    end.
-
-stop(ReqId)->
-    gen_statem:stop(list_to_atom(ref_to_list(ReqId))).
-
 %%%===================================================================
 %%% States
 %%%===================================================================
@@ -89,9 +77,6 @@ execute({call, From}, do, SD0=#state{req_id=ReqId, action=Action, range=Range,
                                     gingko_vnode_master),
     {next_state, waiting, SD0, [{reply,From,waiting}]}.
 
-waiting({call, From}, responses, SD0=#state{accum=Accum, req_id = ReqId}) ->
-    Sorted = minheap:merge(Accum),
-    {next_state, waiting, SD0, [{reply, From, {ReqId, {ok, Sorted}}}]};
 %% @doc Wait for W reqs to respond.
 waiting(info, Response, SD0=#state{req_id = ReqID, from=From, num_w=Responses, w = W, accum=Accum, bucket = _Bucket}) ->
     case Response of
@@ -107,6 +92,10 @@ waiting(info, Response, SD0=#state{req_id = ReqID, from=From, num_w=Responses, w
                     From ! {ReqID, {ok, Sorted}},
                     {stop, normal, SD}
             end;
+        get_responses ->
+            Sorted = minheap:merge(Accum),
+            From ! {ReqID, {ok, Sorted}},
+            {stop, normal, SD0};
         _ ->
             {next_state, waiting, SD0}
     end.
