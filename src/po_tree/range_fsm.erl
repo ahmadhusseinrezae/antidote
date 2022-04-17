@@ -37,29 +37,29 @@
 %%%===================================================================
 
 start_link(ReqId, From, Bucket, Range, Action) ->
-    gen_statem:start_link(?MODULE, [ReqId, From, Bucket, Range, Action],[]).
+    gen_statem:start_link( {local, list_to_atom(ref_to_list(ReqId))}, ?MODULE, [ReqId, From, Bucket, Range, Action],[]).
 
 run(Action, Bucket, Range, Pid, ReqId) ->
     range_fsm_sup:start_fsm([ReqId, Pid, Bucket, Range, Action]),
     {ok, ReqId}.
 
-prepare(Pid)->
-    gen_statem:call(Pid, do).
+prepare(ReqId)->
+    gen_statem:call(list_to_atom(ref_to_list(ReqId)), do).
 
-execute(Pid)->
-    gen_statem:call(Pid, do).
+execute(ReqId)->
+    gen_statem:call(list_to_atom(ref_to_list(ReqId)), do).
 
-get_responses(Pid)->
-    ReqId= gen_statem:send_request(Pid, responses),
-    case gen_statem:receive_response(ReqId) of
+get_responses(ReqId)->
+    ReqId= gen_statem:send_request(list_to_atom(ref_to_list(ReqId)), responses),
+    case gen_statem:receive_response(list_to_atom(ref_to_list(ReqId))) of
         {reply, Reply} ->
             Reply;
         {error, Reason} ->
             {error, Reason}
     end.
 
-stop(Pid)->
-    gen_statem:stop(Pid).
+stop(ReqId)->
+    gen_statem:stop(list_to_atom(ref_to_list(ReqId))).
 
 %%%===================================================================
 %%% States

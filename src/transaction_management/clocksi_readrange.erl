@@ -69,17 +69,17 @@ run_quroum(Min, Max, Timeout, _Type, Transaction) ->
     VecSnapshotTime = Transaction#transaction.vec_snapshot_time,
     ReqId = make_ref(),
     {ok, Pid}= range_fsm_sup:start_fsm([ReqId, self(), ?BUCKET, {Min, Max, VecSnapshotTime}, get_range]),
-    range_fsm:prepare(Pid),
-    range_fsm:execute(Pid),
+    range_fsm:prepare(ReqId),
+    range_fsm:execute(ReqId),
     wait_for_reqid(ReqId, Timeout, Pid).
 
-wait_for_reqid(ReqId, Timeout, Pid) ->
+wait_for_reqid(ReqId, Timeout, _Pid) ->
     receive
         {ReqId, Val} ->
             Val
     after
         Timeout ->
-            case range_fsm:get_responses(Pid) of
+            case range_fsm:get_responses(ReqId) of
                 {ReqId, Res} ->
 %%                    range_fsm:stop(Pid),
                     Res;

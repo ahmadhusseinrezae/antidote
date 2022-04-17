@@ -54,12 +54,14 @@ start_link() ->
 %% ===================================================================
 
 init(_Args) ->
-  RangeTree = {range_tree_sup,
+    RangeTree = {range_tree_sup,
         {range_tree_sup, start_link, []},
         permanent, infinity, supervisor, [range_tree_sup]},
-  RangeTreeFSM = {range_fsm_sup,
+
+    RangeTreeFSM = {range_fsm_sup,
         {range_fsm_sup, start_link, []},
         permanent, infinity, supervisor, [range_fsm_sup]},
+
   Gingko = {gingko_vnode_master,
       {riak_core_vnode_master, start_link, [gingko_vnode]},
       permanent, 5000, worker, [riak_core_vnode_master]},

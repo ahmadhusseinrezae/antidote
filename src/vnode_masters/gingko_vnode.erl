@@ -42,7 +42,7 @@ start_vnode(I) ->
 
 init([Partition]) ->
     GingkoSupervisionTree = gingko_sup:start_link(Partition),
-    ok = range_tree:init_tree(),
+    ok = range_tree:init_tree(Partition),
     {ok, #state { partition=Partition ,gingko = GingkoSupervisionTree}}.
 
 
@@ -195,7 +195,7 @@ handle_command({get_version, TxId, Key, Type, MinimumSnapshotTime,MaximumSnapsho
 
 handle_command({get_range, ReqId, {L, H, Version}}, _Sender, State = #state{partition = Partition}) ->
     Location = {Partition, node()},
-    Res = range_tree:get_range(L, H, true, true, Version),
+    Res = range_tree:get_range(L, H, true, true, Version, Partition),
     {reply, {ReqId, {Location, Res}}, State};
 
 handle_command({prepare, TransactionId,PrepareTimestamp}, _Sender, State = #state{partition = Partition}) ->
@@ -282,6 +282,7 @@ terminate(_Reason, _State) ->
 insert_index(_TransactionId, [ {RowId, Type}| _T]= _WriteSet, Partition) ->
     {ok, SomeTime} = clocksi_interactive_coord_helpers:get_snapshot_time(),
     {ok, {_Key1, _Type1, Value, _Timestamp}} = cache_daemon:get_from_cache(ignore, RowId, Type, SomeTime, SomeTime, Partition),
-    ok = range_tree:insert({RowId, Value, SomeTime}).
+    ok = range_tree:insert({RowId, Value, SomeTime}, Partition).
+%%    ok.
 
 
