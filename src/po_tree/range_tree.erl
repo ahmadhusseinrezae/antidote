@@ -44,7 +44,6 @@ clean_store() ->
 init(_Args) ->
   IndexTable = ets:new(?INDEX, []),
   ReverseIndexTable = ets:new(?REVINDEX, []),
-%%  io:format("range_tree ~p~n", [self()]),
   {ok, #state{index =  {nil, b}, table =  IndexTable, dic_table = ReverseIndexTable}}.
 
 
@@ -54,7 +53,6 @@ handle_call(clean_store, _From, #state{index = _Index, table = Table, dic_table 
   {reply, ok, #state{index = {nil,b}, table = Table, dic_table = DicTable}};
 
 handle_call({insert_record, {RowId, Val, Ver}}, _From, #state{index = Index, table = Table, dic_table = DicTable} = State) ->
-%%  io:format("range_tree  insert ~p~n", [self()]),
   try delete_item(RowId, Val, Ver, Index, Table, DicTable) of
     CleanIndex ->
       try redblackt:insert(Val, RowId, Ver, CleanIndex, Table) of
@@ -86,7 +84,6 @@ handle_call(tree, _From, #state{index = Index} = State) ->
   {reply, Index, State};
 
 handle_call({get_range, Min, Max, _, _, Version}, _From, #state{index = Index, table = Table} = State) ->
-%%  io:format("range_tree  get range ~p~n", [self()]),
   try redblackt:getRange(Min, Max, Index, Table, Version) of
     Res ->
       {reply, Res, State}

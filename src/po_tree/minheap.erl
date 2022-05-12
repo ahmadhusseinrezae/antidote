@@ -24,7 +24,7 @@ merge_lists(Set, List, _SetSize) ->
 %%    get the next item from that list that minimum item comes from, this next item will be added to ordset to be sorted
 %%    and be used for the next iteration
      ItemRes = get_item(List, Index),
-     case ItemRes of 
+     case ItemRes of
         {none, NewList} ->
 %%            if there is not any more item in that sub list then simply add the minimum item(which was the last item in that sublist) and
 %%            continue to next iteration which one sublist less than previous iteration
@@ -38,9 +38,9 @@ merge_lists(Set, List, _SetSize) ->
 
 initialize_heap(Set, List, 0) ->
     {Set, List};
-initialize_heap(Set, List, N) -> 
+initialize_heap(Set, List, N) ->
     Item = get_item(List, N),
-    case Item of 
+    case Item of
         {none, List} ->
             initialize_heap(Set, List, N-1);
         {{Head, Data}, NewList} ->
@@ -49,7 +49,7 @@ initialize_heap(Set, List, N) ->
             initialize_heap(NewSet, NewList, N-1)
     end.
 
-get_item(List, 1) -> 
+get_item(List, 1) ->
     [SubList | Tail] = List,
     case get_head(SubList) of
         none ->
@@ -57,7 +57,7 @@ get_item(List, 1) ->
         {H, T} ->
             {H, [T | Tail]}
     end;
-get_item(List, Index) -> 
+get_item(List, Index) ->
     {HeadList, [SubList | Tail]} = lists:split(Index -1, List),
     case get_head(SubList) of
         none ->
@@ -68,6 +68,8 @@ get_item(List, Index) ->
 
 
 get_head([]) -> none;
+get_head([{}]) -> none;
+get_head({K,V}) -> {{K, V}, []};
 get_head([H | T]) -> {H, T}.
 
 %% this will removed the empty results returned
