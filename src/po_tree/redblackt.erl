@@ -1,7 +1,6 @@
 -module(redblackt).
 
--export([insert/5, insertToListB/3, lookup/4, findLeaf/2, getInThan/3, getRange/5, findMostLeftLeafKey/1,
-    findSplitPoint/2, splitMe/3, splitData/3, merge/4, appendData/4, removeFromLeaf/6, removeFromTree/5, remove/5]).
+-export([insert/5, lookup/4, getRange/5, remove/5, findMostLeftLeafKey/1]).
 -define(Order, 4).
 
 insert(Key, Val, Ver, Tree, EtsTable) ->
@@ -525,40 +524,6 @@ findMostLeftLeafKey({KeyLf, b, leaf}) ->
 findMostLeftLeafKey({L, _R, _Key2, _C}) ->
     findMostLeftLeafKey(L).
 
-%%getGreaterThan(_Key, []) ->
-%%    [];
-%%getGreaterThan(Key, [{Key2, Val2}]) when Key < Key2 ->
-%%    [{Key2, Val2}];
-%%getGreaterThan(Key, [{Key2, Val2}]) when Key2 == Key ->
-%%    [{Key2, Val2}];
-%%getGreaterThan(Key, [{Key2, _Val2}]) when Key > Key2 ->
-%%    [];
-%%getGreaterThan(Key, [{Key2, _Val2} | T] = List) ->
-%%    case Key =< Key2 of
-%%        true ->
-%%            List;
-%%        false ->
-%%            getGreaterThan(Key, T)
-%%    end.
-
-%%getGreaterThan(_Key, _Max, []) ->
-%%    [];
-%%getGreaterThan(Key, _Max, [{Key2, _Val2}]) when Key > Key2 ->
-%%    [];
-%%getGreaterThan(Key, _Max, [{Key2, Val2}]) when Key2 == Key ->
-%%    [{Key2, Val2}];
-%%getGreaterThan(Key, Max, [{Key2, Val2}]) when (Key =< Key2) and (Key2 =< Max) ->
-%%    [{Key2, Val2}];
-%%getGreaterThan(Key, Max, [{Key2, _Val2}]) when (Key < Key2) and (Max < Key2) ->
-%%    [];
-%%getGreaterThan(Key, Max, [{Key2, _Val2} | T]) ->
-%%    case (Key =< Key2) and (Key2 =< Max) of
-%%        true ->
-%%            [{Key2, _Val2}] ++ getGreaterThan(Key, Max, T);
-%%        false ->
-%%            []
-%%    end.
-
 getInThan(_Min, _Max, []) ->
     [];
 getInThan(Min, Max, [{Key2, Val2}]) when (Min =< Key2) and (Key2 =< Max) ->
@@ -604,16 +569,6 @@ findSplitPoint(Key, L) ->
             end
     end.
 
-
-splitMe({Left, Right}, _Key, []) ->
-    {Left, Right};
-splitMe({Left, Right}, Key, [{Nth, Data} | T]) ->
-    case Nth =< Key of
-        true ->
-            splitMe({[{Nth, Data}] ++ Left, Right}, Key, T);
-        false ->
-            splitMe({Left, [{Nth, Data}] ++ Right}, Key, T)
-    end.
 
 binarySearch(_Key, []) ->
     {};
