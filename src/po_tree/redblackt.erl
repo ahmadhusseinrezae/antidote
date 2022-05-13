@@ -1,6 +1,6 @@
 -module(redblackt).
 
--export([insert/5, insertToListB/3, lookup/4, findLeaf/2, getGreaterThan/2, getLessThan/3, getRange/5, findMostLeftLeafKey/1,
+-export([insert/5, insertToListB/3, lookup/4, findLeaf/2, getInThan/3, getRange/5, findMostLeftLeafKey/1,
     findSplitPoint/2, splitMe/3, splitData/3, merge/4, appendData/4, removeFromLeaf/6, removeFromTree/5, remove/5]).
 -define(Order, 4).
 
@@ -248,18 +248,18 @@ getRange(Min, Max, Tree, EtsTable, MaxVersion) ->
     {MaT, _, _, _MaVers} = getPayload(EtsTable, MaxKey),
     case MinKey == MaxKey of
         true ->
-            getGreaterThanFromVersion(MaxVersion, Min, MiT);
+            getGreaterThanFromVersion(MaxVersion, Min, Max, MiT);
         false ->
-            GreaterThan = getGreaterThanFromVersion(MaxVersion, Min, MiT),
+            GreaterThan = getGreaterThanFromVersion(MaxVersion, Min, Max, MiT),
             LessThan = getLessThanFromVersion(MaxVersion, Min, Max, MaT),
             GreaterThan ++ getNextUntil(MaxKey, MinR, EtsTable, MaxVersion) ++ LessThan
     end.
-getGreaterThanFromVersion(Version, Key, VersionIndex) ->
+getGreaterThanFromVersion(Version,  MinimumKey, MaximumKey, VersionIndex) ->
     case version_tree:get_glv_data(Version, VersionIndex) of
         nil ->
             [];
         {_, GLVVersionData} ->
-            getGreaterThan(Key, GLVVersionData)
+            getInThan( MinimumKey, MaximumKey, GLVVersionData)
     end.
 
 getLessThanFromVersion(Version, MinimumKey, MaximumKey, VersionIndex) ->
@@ -267,7 +267,7 @@ getLessThanFromVersion(Version, MinimumKey, MaximumKey, VersionIndex) ->
         nil ->
             [];
         {_, GLVVersionData} ->
-            getLessThan(MinimumKey, MaximumKey, GLVVersionData)
+            getInThan(MinimumKey, MaximumKey, GLVVersionData)
     end.
 
 getNextUntil(Until, Key, _EtsTable, _MaxVersion) when Key == Until ->
@@ -525,36 +525,55 @@ findMostLeftLeafKey({KeyLf, b, leaf}) ->
 findMostLeftLeafKey({L, _R, _Key2, _C}) ->
     findMostLeftLeafKey(L).
 
-getGreaterThan(_Key, []) ->
-    [];
-getGreaterThan(Key, [{Key2, Val2}]) when Key < Key2 ->
-    [{Key2, Val2}];
-getGreaterThan(Key, [{Key2, Val2}]) when Key2 == Key ->
-    [{Key2, Val2}];
-getGreaterThan(Key, [{Key2, _Val2}]) when Key > Key2 ->
-    [];
-getGreaterThan(Key, [{Key2, _Val2} | T] = List) ->
-    case Key =< Key2 of
-        true ->
-            List;
-        false ->
-            getGreaterThan(Key, T)
-    end.
+%%getGreaterThan(_Key, []) ->
+%%    [];
+%%getGreaterThan(Key, [{Key2, Val2}]) when Key < Key2 ->
+%%    [{Key2, Val2}];
+%%getGreaterThan(Key, [{Key2, Val2}]) when Key2 == Key ->
+%%    [{Key2, Val2}];
+%%getGreaterThan(Key, [{Key2, _Val2}]) when Key > Key2 ->
+%%    [];
+%%getGreaterThan(Key, [{Key2, _Val2} | T] = List) ->
+%%    case Key =< Key2 of
+%%        true ->
+%%            List;
+%%        false ->
+%%            getGreaterThan(Key, T)
+%%    end.
 
-getLessThan(_Min, _Key, []) ->
+%%getGreaterThan(_Key, _Max, []) ->
+%%    [];
+%%getGreaterThan(Key, _Max, [{Key2, _Val2}]) when Key > Key2 ->
+%%    [];
+%%getGreaterThan(Key, _Max, [{Key2, Val2}]) when Key2 == Key ->
+%%    [{Key2, Val2}];
+%%getGreaterThan(Key, Max, [{Key2, Val2}]) when (Key =< Key2) and (Key2 =< Max) ->
+%%    [{Key2, Val2}];
+%%getGreaterThan(Key, Max, [{Key2, _Val2}]) when (Key < Key2) and (Max < Key2) ->
+%%    [];
+%%getGreaterThan(Key, Max, [{Key2, _Val2} | T]) ->
+%%    case (Key =< Key2) and (Key2 =< Max) of
+%%        true ->
+%%            [{Key2, _Val2}] ++ getGreaterThan(Key, Max, T);
+%%        false ->
+%%            []
+%%    end.
+
+getInThan(_Min, _Max, []) ->
     [];
-getLessThan(_Min, Key, [{Key2, _Val2}]) when Key < Key2 ->
-    [];
-getLessThan(_Min, Key, [{Key2, Val2}]) when Key2 == Key ->
+getInThan(Min, Max, [{Key2, Val2}]) when (Min =< Key2) and (Key2 =< Max) ->
     [{Key2, Val2}];
-getLessThan(Min, Key, [{Key2, Val2}]) when (Key > Key2) and (Key2 >= Min) ->
-    [{Key2, Val2}];
-getLessThan(Min, Key, [{Key2, _Val2}]) when (Key > Key2) and (Key2 < Min) ->
+getInThan(_Min, _Max, [{_Key2, _Val2}]) ->
     [];
-getLessThan(Min, Key, [{Key2, _Val2} | T]) ->
-    case (Key >= Key2) and (Key2 >= Min) of
+getInThan(Min, Max, [{Key2, Val2} | T]) ->
+    case Key2 =< Max of
         true ->
-            [{Key2, _Val2}] ++ getLessThan(Min, Key, T);
+            case Min =< Key2 of
+                true ->
+                    [{Key2, Val2}] ++ getInThan(Min, Max, T);
+                false ->
+                    getInThan(Min, Max, T)
+            end;
         false ->
             []
     end.

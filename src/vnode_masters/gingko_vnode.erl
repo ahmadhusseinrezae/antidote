@@ -279,10 +279,12 @@ handle_exit(_Pid, _Reason, State) ->
 terminate(_Reason, _State) ->
     ok.
 
-insert_index(_TransactionId, [ {RowId, Type}| _T]= _WriteSet, Partition) ->
+insert_index(_TransactionId, [], _Partition) ->
+    ok;
+insert_index(TransactionId, [ {RowId, Type}| T]= _WriteSet, Partition) ->
     {ok, SomeTime} = clocksi_interactive_coord_helpers:get_snapshot_time(),
     {ok, {_Key1, _Type1, Value, _Timestamp}} = cache_daemon:get_from_cache(ignore, RowId, Type, SomeTime, SomeTime, Partition),
-    ok = range_tree:insert({RowId, Value, SomeTime}, Partition).
-%%    ok.
+    ok = range_tree:insert({RowId, Value, SomeTime}, Partition),
+    insert_index(TransactionId, T, Partition).
 
 
