@@ -1,5 +1,6 @@
 %% @doc Supervise the huskv_write FSM.
 -module(range_fsm_sup).
+-author("ahr").
 -behavior(supervisor).
 
 -export([start_fsm/1, start_link/0]).

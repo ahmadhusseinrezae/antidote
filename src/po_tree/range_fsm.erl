@@ -1,5 +1,5 @@
 -module(range_fsm).
-
+-author("ahr").
 -behavior(gen_statem).
 
 

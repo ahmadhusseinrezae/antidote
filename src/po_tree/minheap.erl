@@ -1,4 +1,5 @@
 -module(minheap).
+-author("ahr").
 
 -export([merge/1, trim_list/1, initialize_heap/3, merge_lists/3]).
 

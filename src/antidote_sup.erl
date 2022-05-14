@@ -54,9 +54,9 @@ start_link() ->
 %% ===================================================================
 
 init(_Args) ->
-    RangeTree = {range_tree_sup,
-        {range_tree_sup, start_link, []},
-        permanent, infinity, supervisor, [range_tree_sup]},
+    RangeTree = {po_tree_sup,
+        {po_tree_sup, start_link, []},
+        permanent, infinity, supervisor, [po_tree_sup]},
 
     RangeTreeFSM = {range_fsm_sup,
         {range_fsm_sup, start_link, []},
